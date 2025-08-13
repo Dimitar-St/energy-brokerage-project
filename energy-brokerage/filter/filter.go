@@ -1,19 +1,20 @@
 package filter
 
 import (
+	"errors"
 	"net/url"
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Operator string
 
 const (
-	OpEq      Operator = "="
-	OpGte     Operator = ">="
-	OpLte     Operator = "<="
-	OpBetween Operator = "BETWEEN"
+	OpEq  Operator = "="
+	OpGte Operator = ">="
+	OpLte Operator = "<="
 )
 
 type Condition struct {
@@ -28,13 +29,10 @@ type Filter struct {
 
 func (f *Filter) Apply(query *gorm.DB) *gorm.DB {
 	for _, c := range f.Conditions {
-		switch c.Operator {
-		case OpBetween:
-			if len(c.Values) == 2 {
-				query = query.Where(c.Field+" BETWEEN ? AND ?", c.Values[0], c.Values[1])
-			}
-		default:
-			if len(c.Values) == 1 {
+		if len(c.Values) == 1 {
+			if len(query.Statement.Clauses) > 0 {
+				query = query.Clauses(clause.And(gorm.Expr(c.Field+" "+string(c.Operator)+" ?", c.Values[0])))
+			} else {
 				query = query.Where(c.Field+" "+string(c.Operator)+" ?", c.Values[0])
 			}
 		}
@@ -48,16 +46,16 @@ type ParamDef struct {
 	ParseFunc func([]string) ([]any, error)
 }
 
-func parseDate(layout string) func([]string) ([]any, error) {
+func validateDate(layout string) func([]string) ([]any, error) {
 	return func(values []string) ([]any, error) {
 		if len(values) == 0 || values[0] == "" {
 			return nil, nil
 		}
-		t, err := time.Parse(layout, values[0])
+		_, err := time.Parse(layout, values[0])
 		if err != nil {
 			return nil, err
 		}
-		return []any{t}, nil
+		return []any{values[0]}, nil
 	}
 }
 
@@ -82,15 +80,17 @@ func NewFilter(values url.Values) (*Filter, error) {
 	layout := "2006-01-02"
 
 	paramDefs := map[string]ParamDef{
-		"status": {Field: "status", Operator: OpEq, ParseFunc: func(v []string) ([]any, error) {
-			if len(v) == 0 || v[0] == "" {
-				return nil, nil
+		"type": {Field: "type", Operator: OpEq, ParseFunc: func(v []string) ([]any, error) {
+			if len(v) == 0 || len(v) > 1 {
+				return nil, errors.New("illegal value")
+			}
+			if v[0] == "" || !(v[0] == "buy" || v[0] == "sell") {
+				return nil, errors.New("illegal value")
 			}
 			return []any{v[0]}, nil
 		}},
-		"start": {Field: "delivery_time", Operator: OpGte, ParseFunc: parseDate(layout)},
-		"end":   {Field: "delivery_time", Operator: OpLte, ParseFunc: parseDate(layout)},
-		"range": {Field: "delivery_time", Operator: OpBetween, ParseFunc: parseDateRange(layout)},
+		"from": {Field: "delivery_time", Operator: OpGte, ParseFunc: validateDate(layout)},
+		"to":   {Field: "delivery_time", Operator: OpLte, ParseFunc: validateDate(layout)},
 	}
 
 	f := &Filter{}

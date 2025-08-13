@@ -19,7 +19,6 @@ type orderRepository struct {
 }
 
 func (r *orderRepository) InsertOrder(order models.Order) error {
-
 	result := r.db.Create(&order)
 
 	if result.Error != nil {
@@ -30,14 +29,16 @@ func (r *orderRepository) InsertOrder(order models.Order) error {
 }
 
 func (r *orderRepository) GetOrders(filters url.Values) ([]models.Order, error) {
-	appliedFilter, _ := filter.NewFilter(filters)
 	orders := []models.Order{}
+	appliedFilter, err := filter.NewFilter(filters)
+	if err != nil {
+		return orders, err
+	}
 
 	query := r.db.Model(&models.Order{})
 	appliedFilter.Apply(query)
-	query.Logger.LogMode(2)
 
-	tx := query.Find(orders)
+	tx := query.Find(&orders)
 	if tx.Error != nil {
 		return []models.Order{}, tx.Error
 	}
