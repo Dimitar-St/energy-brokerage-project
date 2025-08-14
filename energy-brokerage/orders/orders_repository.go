@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"energy-brokerage/db"
 	"energy-brokerage/filter"
 	"energy-brokerage/models"
 	"net/url"
@@ -37,6 +38,7 @@ func (r *orderRepository) GetOrders(filters url.Values) ([]models.Order, error) 
 
 	query := r.db.Model(&models.Order{})
 	appliedFilter.Apply(query)
+	db.ApplyPagination(query, filters)
 
 	tx := query.Find(&orders)
 	if tx.Error != nil {

@@ -27,6 +27,8 @@ type Filter struct {
 	Conditions []Condition
 }
 
+var Offset = 0
+
 func (f *Filter) Apply(query *gorm.DB) *gorm.DB {
 	for _, c := range f.Conditions {
 		if len(c.Values) == 1 {
@@ -37,6 +39,7 @@ func (f *Filter) Apply(query *gorm.DB) *gorm.DB {
 			}
 		}
 	}
+
 	return query
 }
 

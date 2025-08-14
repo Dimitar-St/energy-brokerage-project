@@ -13,6 +13,7 @@ type ordersReadHandler struct {
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
 }
