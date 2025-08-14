@@ -2,6 +2,7 @@ package filter
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"time"
 
@@ -44,9 +45,9 @@ func (f *Filter) Apply(query *gorm.DB) *gorm.DB {
 }
 
 type ParamDef struct {
-	Field     string
-	Operator  Operator
-	ParseFunc func([]string) ([]any, error)
+	Field        string
+	Operator     Operator
+	ValidateFunc func([]string) ([]any, error)
 }
 
 func validateDate(layout string) func([]string) ([]any, error) {
@@ -83,24 +84,24 @@ func NewFilter(values url.Values) (*Filter, error) {
 	layout := "2006-01-02"
 
 	paramDefs := map[string]ParamDef{
-		"type": {Field: "type", Operator: OpEq, ParseFunc: func(v []string) ([]any, error) {
+		"type": {Field: "type", Operator: OpEq, ValidateFunc: func(v []string) ([]any, error) {
 			if len(v) == 0 || len(v) > 1 {
 				return nil, errors.New("illegal value")
 			}
-			if v[0] == "" || !(v[0] == "buy" || v[0] == "sell") {
+			if v[0] == "" || !(v[0] == "Buy" || v[0] == "Sell") {
 				return nil, errors.New("illegal value")
 			}
 			return []any{v[0]}, nil
 		}},
-		"from": {Field: "delivery_time", Operator: OpGte, ParseFunc: validateDate(layout)},
-		"to":   {Field: "delivery_time", Operator: OpLte, ParseFunc: validateDate(layout)},
+		"from": {Field: "delivery_time", Operator: OpGte, ValidateFunc: validateDate(layout)},
+		"to":   {Field: "delivery_time", Operator: OpLte, ValidateFunc: validateDate(layout)},
 	}
 
 	f := &Filter{}
 
 	for param, def := range paramDefs {
 		if rawVals, ok := values[param]; ok {
-			parsed, err := def.ParseFunc(rawVals)
+			parsed, err := def.ValidateFunc(rawVals)
 			if err != nil {
 				return nil, err
 			}
