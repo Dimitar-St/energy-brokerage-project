@@ -11,7 +11,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 type loginHandler struct {
@@ -118,8 +117,8 @@ func extractBearerToken(authHeader string) (string, error) {
 	return parts[1], nil
 }
 
-func New(db gorm.DB) http.Handler {
+func NewHandler(repository Repository) http.Handler {
 	return loginHandler{
-		repository: NewRepository(db),
+		repository: repository,
 	}
 }

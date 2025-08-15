@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"energy-brokerage/models"
 	"net/http"
-
-	"gorm.io/gorm"
 )
 
 type ordersWriteHandler struct {
@@ -29,8 +27,8 @@ func (l ordersWriteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"success": "order created"})
 }
 
-func NewWriteHandler(db gorm.DB) http.Handler {
+func NewWriteHandler(repository Repository) http.Handler {
 	return ordersWriteHandler{
-		repository: &orderRepository{db},
+		repository: repository,
 	}
 }

@@ -26,5 +26,4 @@ func (r *loginRepository) GetUser(username string) (models.User, error) {
 
 func NewRepository(db gorm.DB) Repository {
 	return &loginRepository{db}
-
 }

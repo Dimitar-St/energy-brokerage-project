@@ -12,7 +12,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type registerHandler struct {
@@ -67,8 +66,8 @@ func (h registerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, map[string]string{"message": "user registered"})
 }
 
-func New(db gorm.DB) http.Handler {
+func NewHandler(repository Repository) http.Handler {
 	return registerHandler{
-		repository: NewRepository(db),
+		repository: repository,
 	}
 }

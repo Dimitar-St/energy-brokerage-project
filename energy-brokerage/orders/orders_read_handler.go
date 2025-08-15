@@ -3,8 +3,6 @@ package orders
 import (
 	"encoding/json"
 	"net/http"
-
-	"gorm.io/gorm"
 )
 
 type ordersReadHandler struct {
@@ -30,8 +28,8 @@ func (l ordersReadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, orders)
 }
 
-func NewReadHandler(db gorm.DB) http.Handler {
+func NewReadHandler(repository Repository) http.Handler {
 	return ordersReadHandler{
-		repository: &orderRepository{db},
+		repository: repository,
 	}
 }

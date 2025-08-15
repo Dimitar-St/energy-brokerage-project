@@ -44,16 +44,17 @@ func (s *server) Start() {
 		defer cancel()
 
 		s.stdServer.SetKeepAlivesEnabled(false)
+		log.Println("Server shutting down...")
 		if err := s.stdServer.Shutdown(ctx); err != nil {
-			log.Fatalf("graceful shutdown failed: %v\n", err)
+			log.Fatalf("gracefull shutdown failed: %v\n", err)
 		}
 
 		close(done)
-
 	}()
 
-	if err := s.stdServer.ListenAndServe(); err != nil {
-		log.Fatalf("could not start server: %v\n", err)
+	err := s.stdServer.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
+		log.Fatal(err.Error())
 	}
 
 	<-done
@@ -69,17 +70,21 @@ func Initialize(port int) HTTPHandler {
 		panic(err)
 	}
 
+	orderRepostory := orders.NewRepository(db)
+	loginRepository := login.NewRepository(db)
+	registerReposotory := register.NewRepository(db)
+
 	r := mux.NewRouter()
 	httpLog := &httpLogger{}
 
 	r.Use(httpLog.log)
 
-	r.Handle("/register", register.New(db)).Methods("GET")
-	r.Handle("/login", login.New(db)).Methods("GET")
+	r.Handle("/register", register.NewHandler(registerReposotory)).Methods("GET")
+	r.Handle("/login", login.NewHandler(loginRepository)).Methods("GET")
 
-	r.Handle("/orders", orders.NewReadHandler(db)).Methods("GET")
-	r.Handle("/orders", orders.NewWriteHandler(db)).Methods("POST")
-	r.Handle("/orders/{id}", orders.NewWriteHandler(db)).Methods("DELETE")
+	r.Handle("/orders", orders.NewReadHandler(orderRepostory)).Methods("GET")
+	r.Handle("/orders", orders.NewWriteHandler(orderRepostory)).Methods("POST")
+	r.Handle("/orders/{id}", orders.NewWriteHandler(orderRepostory)).Methods("DELETE")
 
 	stdServer := &http.Server{
 		Addr:         fmt.Sprintf(":%v", port),
