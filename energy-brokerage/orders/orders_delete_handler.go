@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"energy-brokerage/response"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -15,11 +16,17 @@ func (l ordersDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	err := l.repository.DeleteOrder(id)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to delete"})
+		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
+			ClientResponse:   map[string]string{"error": "failed to delete"},
+			InternalResponse: err.Error(),
+		})
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"success": "order deleted"})
+	response.WriteJSON(w, http.StatusOK, response.Response{
+		ClientResponse:   map[string]string{"success": "order deleted"},
+		InternalResponse: err.Error(),
+	})
 }
 
 func NewDeleteHandler(db gorm.DB) http.Handler {

@@ -3,6 +3,7 @@ package orders
 import (
 	"encoding/json"
 	"energy-brokerage/models"
+	"energy-brokerage/response"
 	"net/http"
 )
 
@@ -14,17 +15,26 @@ func (l ordersWriteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	order := models.NewOrder()
 	err := json.NewDecoder(r.Body).Decode(&order)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to parse order"})
+		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
+			ClientResponse:   map[string]string{"error": "failed to parse order"},
+			InternalResponse: err.Error(),
+		})
 		return
 	}
 
 	err = l.repository.InsertOrder(order)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed save order"})
+		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
+			ClientResponse:   map[string]string{"error": "failed save order"},
+			InternalResponse: err.Error(),
+		})
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"success": "order created"})
+	response.WriteJSON(w, http.StatusOK, response.Response{
+		ClientResponse:   map[string]string{"success": "order created"},
+		InternalResponse: "",
+	})
 }
 
 func NewWriteHandler(repository Repository) http.Handler {

@@ -1,10 +1,9 @@
 package login
 
 import (
-	"encoding/json"
+	"energy-brokerage/response"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -25,44 +24,48 @@ type CustomClaims struct {
 
 var jwtSecret []byte
 
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.WriteHeader(status)
-
-	_ = json.NewEncoder(w).Encode(v)
-}
-
 func (l loginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	if username == "" || password == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "username and password are required"})
+		response.WriteJSON(w, http.StatusBadRequest, response.Response{
+			ClientResponse:   map[string]string{"error": "username and password are required"},
+			InternalResponse: "",
+		})
 		return
 	}
 
 	user, err := l.repository.GetUser(username)
 	if err != nil {
-		log.Println(err.Error())
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid username or password"})
+		response.WriteJSON(w, http.StatusUnauthorized, response.Response{
+			ClientResponse:   map[string]string{"error": "invalid username or password"},
+			InternalResponse: err.Error(),
+		})
 		return
 	}
 
 	passToCompare := password + user.Salt
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(passToCompare)); err != nil {
-		log.Println(err.Error())
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid username or password"})
+		response.WriteJSON(w, http.StatusUnauthorized, response.Response{
+			ClientResponse:   map[string]string{"error": "invalid username or password"},
+			InternalResponse: err.Error(),
+		})
 		return
 	}
 
 	tokenString, err := generateJWT(username)
 	if err != nil {
-		log.Println(err.Error())
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to create token"})
+		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
+			ClientResponse:   map[string]string{"error": "failed to create token"},
+			InternalResponse: err.Error(),
+		})
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{"token": tokenString})
+	response.WriteJSON(w, http.StatusOK, response.Response{
+		ClientResponse:   map[string]string{"token": tokenString},
+		InternalResponse: "",
+	})
 }
 
 func generateJWT(username string) (string, error) {
@@ -83,7 +86,10 @@ func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenStr, err := extractBearerToken(r.Header.Get("Authorization"))
 		if err != nil {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "missing or invalid Authorization header"})
+			response.WriteJSON(w, http.StatusUnauthorized, response.Response{
+				ClientResponse:   map[string]string{"error": "missing or invalid Authorization header"},
+				InternalResponse: err.Error(),
+			})
 			return
 		}
 
@@ -96,7 +102,10 @@ func Middleware(next http.Handler) http.Handler {
 		})
 
 		if err != nil {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid token: " + err.Error()})
+			response.WriteJSON(w, http.StatusUnauthorized, response.Response{
+				ClientResponse:   map[string]string{"error": "invalid token: " + err.Error()},
+				InternalResponse: err.Error(),
+			})
 			return
 		}
 

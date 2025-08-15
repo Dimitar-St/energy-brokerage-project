@@ -1,8 +1,8 @@
 package register
 
 import (
-	"encoding/json"
 	"energy-brokerage/models"
+	"energy-brokerage/response"
 	"net/http"
 
 	"golang.org/x/crypto/bcrypt"
@@ -18,13 +18,6 @@ type registerHandler struct {
 	repository Repository
 }
 
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
-}
-
 func generateSalt(size int) (string, error) {
 	bytes := make([]byte, size)
 	_, err := rand.Read(bytes)
@@ -38,7 +31,10 @@ func (h registerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 	if username == "" || password == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "username and password are required"})
+		response.WriteJSON(w, http.StatusBadRequest, response.Response{
+			ClientResponse:   map[string]string{"error": "username and password are required"},
+			InternalResponse: "",
+		})
 		return
 	}
 
@@ -46,7 +42,10 @@ func (h registerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	passToHash := password + salt
 	hashed, err := bcrypt.GenerateFromPassword([]byte(passToHash), bcrypt.DefaultCost)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to hash password"})
+		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
+			ClientResponse:   map[string]string{"error": "failed to hash password"},
+			InternalResponse: err.Error(),
+		})
 		return
 	}
 
@@ -59,11 +58,17 @@ func (h registerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	err = h.repository.InsertUser(newUser)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not create user"})
+		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
+			ClientResponse:   map[string]string{"error": "could not create user"},
+			InternalResponse: err.Error(),
+		})
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, map[string]string{"message": "user registered"})
+	response.WriteJSON(w, http.StatusCreated, response.Response{
+		ClientResponse:   map[string]string{"message": "user registered"},
+		InternalResponse: "",
+	})
 }
 
 func NewHandler(repository Repository) http.Handler {
