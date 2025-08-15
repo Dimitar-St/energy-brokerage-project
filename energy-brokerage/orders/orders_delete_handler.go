@@ -29,7 +29,7 @@ func (l ordersDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func NewDeleteHandler(db gorm.DB) http.Handler {
+func NewDeleteHandler(db *gorm.DB) http.Handler {
 	return ordersDeleteHandler{
 		repository: &orderRepository{db},
 	}

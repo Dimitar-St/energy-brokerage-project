@@ -16,6 +16,8 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@kyvg/vue3-notification": "github:kyvg/vue3-notification",
+    "axios": "^1.11.0",
     "build-url-ts": "^6.1.8",
     "material-design-icons": "^3.0.1",
     "materialize-css": "1.0.0-rc.2",

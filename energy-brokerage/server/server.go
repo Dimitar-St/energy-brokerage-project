@@ -25,7 +25,7 @@ type HTTPHandler interface {
 }
 
 type server struct {
-	db        gorm.DB
+	db        *gorm.DB
 	router    *mux.Router
 	stdServer *http.Server
 }
@@ -61,6 +61,7 @@ func (s *server) Start() {
 	log.Println("Server stopped")
 }
 
+// IMPLEMENT JWT SECRET ROTATION
 func Initialize(port int) HTTPHandler {
 	log.Println("Initializing Server...")
 	db := db.Initialize()
@@ -79,16 +80,16 @@ func Initialize(port int) HTTPHandler {
 
 	r.Use(httpLog.log)
 
-	r.Handle("/register", register.NewHandler(registerReposotory)).Methods("GET")
-	r.Handle("/login", login.NewHandler(loginRepository)).Methods("GET")
+	r.Handle("/register", register.NewHandler(registerReposotory)).Methods("POST")
+	r.Handle("/login", login.NewHandler(loginRepository)).Methods("POST")
 
-	r.Handle("/orders", orders.NewReadHandler(orderRepostory)).Methods("GET")
-	r.Handle("/orders", orders.NewWriteHandler(orderRepostory)).Methods("POST")
-	r.Handle("/orders/{id}", orders.NewWriteHandler(orderRepostory)).Methods("DELETE")
+	r.Handle("/orders", login.Middleware(orders.NewReadHandler(orderRepostory))).Methods("GET")
+	r.Handle("/orders", login.Middleware(orders.NewWriteHandler(orderRepostory))).Methods("POST")
+	r.Handle("/orders/{id}", login.Middleware(orders.NewWriteHandler(orderRepostory))).Methods("DELETE")
 
 	stdServer := &http.Server{
 		Addr:         fmt.Sprintf(":%v", port),
-		Handler:      r,
+		Handler:      corsHandler(r),
 		WriteTimeout: 2 * time.Second,
 		ReadTimeout:  2 * time.Second,
 	}
@@ -97,5 +98,21 @@ func Initialize(port int) HTTPHandler {
 		db:        db,
 		router:    r,
 		stdServer: stdServer,
+	}
+}
+
+func corsHandler(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		h.ServeHTTP(w, r)
 	}
 }

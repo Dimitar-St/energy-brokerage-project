@@ -3,6 +3,7 @@ package filter
 import (
 	"errors"
 	"net/url"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -90,7 +91,7 @@ func NewFilter(values url.Values) (*Filter, error) {
 			if v[0] == "" || !(v[0] == "Buy" || v[0] == "Sell") {
 				return nil, errors.New("illegal value")
 			}
-			return []any{v[0]}, nil
+			return []any{strings.ToLower(v[0])}, nil
 		}},
 		"from": {Field: "delivery_time", Operator: OpGte, ValidateFunc: validateDate(layout)},
 		"to":   {Field: "delivery_time", Operator: OpLte, ValidateFunc: validateDate(layout)},

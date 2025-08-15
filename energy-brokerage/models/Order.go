@@ -35,7 +35,7 @@ type Order struct {
 	Price        int         `gorm:"not null" json:"price"`
 	Status       OrderStatus `gorm:"not null" json:"status"`
 	Deleted      bool        `gorm:"not null"`
-	User         User        `gorm:"not null;foreignKey: username"`
+	UserID       string      `gorm:"not null"`
 }
 
 func NewOrder() Order {

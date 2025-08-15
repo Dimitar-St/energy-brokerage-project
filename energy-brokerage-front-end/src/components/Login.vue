@@ -1,11 +1,36 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
+import axios from 'axios'
+import { UrlBuilder } from '../url/builder.ts'
 
 const username = ref('')
 const password = ref('')
 
-function handleLogin() {
+const serviceUrl = new UrlBuilder('http://localhost:8080/login')
+
+async function handleLogin() {
+  const credentials = {
+    username: username.value,
+    password: password.value,
+  }
   console.log('Logging in with', username.value, password.value)
+  await axios
+    .post(serviceUrl, credentials, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      withCredentials: true,
+    })
+    .then((response) => {
+      console.log(response)
+    })
+    .catch((error) => {
+      if (error.response) {
+        console.log(error.response.data)
+        console.log(error.response.status)
+        console.log(error.response.headers)
+      }
+    })
 }
 </script>
 

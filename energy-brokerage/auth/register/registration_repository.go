@@ -10,7 +10,7 @@ type Repository interface {
 }
 
 type registerRepository struct {
-	db gorm.DB
+	db *gorm.DB
 }
 
 func (r *registerRepository) InsertUser(user models.User) error {
@@ -23,6 +23,6 @@ func (r *registerRepository) InsertUser(user models.User) error {
 	return nil
 }
 
-func NewRepository(db gorm.DB) Repository {
+func NewRepository(db *gorm.DB) Repository {
 	return &registerRepository{db}
 }

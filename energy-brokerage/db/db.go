@@ -9,14 +9,25 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
+	"os"
 )
 
-func Initialize() gorm.DB {
+func Initialize() *gorm.DB {
 	log.Println("Initializing Database connection...")
 
 	dsn := "host=localhost user=postgres password=postgres dbname=energy-brokerage port=5432 sslmode=disable"
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+			SlowThreshold:             time.Second, // Slow SQL threshold
+			LogLevel:                  logger.Info, // Log level
+			IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
+			ParameterizedQueries:      false,       // Don't include params in the SQL log
+			Colorful:                  false,       // Disable color
+		},
+	)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default,
+		Logger: newLogger,
 	})
 
 	if err != nil {
@@ -35,7 +46,7 @@ func Initialize() gorm.DB {
 
 	log.Println("Initilization with Database successful!")
 
-	return *db
+	return db
 }
 
 func ApplyPagination(db *gorm.DB, values map[string][]string) {

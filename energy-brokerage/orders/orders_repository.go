@@ -16,7 +16,7 @@ type Repository interface {
 }
 
 type orderRepository struct {
-	db gorm.DB
+	db *gorm.DB
 }
 
 func (r *orderRepository) InsertOrder(order models.Order) error {
@@ -31,13 +31,13 @@ func (r *orderRepository) InsertOrder(order models.Order) error {
 
 func (r *orderRepository) GetOrders(filters url.Values) ([]models.Order, error) {
 	orders := []models.Order{}
-	appliedFilter, err := filter.NewFilter(filters)
+	filter, err := filter.NewFilter(filters)
 	if err != nil {
 		return orders, err
 	}
 
 	query := r.db.Model(&models.Order{})
-	appliedFilter.Apply(query)
+	filter.Apply(query)
 	db.ApplyPagination(query, filters)
 
 	tx := query.Find(&orders)
@@ -56,7 +56,7 @@ func (r *orderRepository) DeleteOrder(id string) error {
 	return nil
 }
 
-func NewRepository(db gorm.DB) Repository {
+func NewRepository(db *gorm.DB) Repository {
 	return &orderRepository{db}
 
 }

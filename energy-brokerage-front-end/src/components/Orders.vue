@@ -1,43 +1,8 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
-
-class UrlBuilder {
-  private cache: string | null = null
-  private parameters: Record<string, string> = {}
-
-  public constructor(private prefix: string) {}
-
-  public getParameter = (name: string, defaultValue: string): string => {
-    return this.parameters[name] ?? defaultValue
-  }
-
-  public setParameter = (name: string, value: string | null): void => {
-    const parameter = this.parameters[name]
-    if (parameter == value) {
-      return
-    }
-    this.cache = null
-    if (value == null) {
-      delete this.parameters[name]
-    } else {
-      this.parameters[name] = String(value)
-    }
-  }
-
-  public toString = (): string => {
-    if (this.cache == null) {
-      let url = ''
-      const entries = Object.entries(this.parameters)
-      for (const entry of entries) {
-        const name = encodeURIComponent(entry[0])
-        const value = encodeURIComponent(entry[1])
-        url += (url ? '&' : '?') + name + '=' + value
-      }
-      this.cache = this.prefix + url
-    }
-    return this.cache
-  }
-}
+import { notify } from '@kyvg/vue3-notification'
+import axios from 'axios'
+import { UrlBuilder } from '../url/builder.ts'
 
 document.addEventListener('DOMContentLoaded', function () {
   const to = document.querySelectorAll('.datepicker-to')
@@ -63,18 +28,18 @@ const serviceUrl = new UrlBuilder('http://localhost:8080/orders')
 serviceUrl.setParameter('limit', '10')
 
 async function getOrders(url: string) {
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error(`Error! status: ${response.status}`)
-  }
-
-  result.value = await response.json()
+  await axios
+    .get(url, { withCredentials: true })
+    .then((res) => {
+      result.value = res.data
+    })
+    .catch((error) => {
+      notify({
+        title: 'error',
+        text: error,
+      })
+      console.log(error)
+    })
 }
 
 async function nextOrders() {
@@ -100,7 +65,7 @@ async function requestOrders() {
 
   serviceUrl.setParameter('from', from)
   serviceUrl.setParameter('to', to)
-  if (type !== "") {
+  if (type !== '') {
     serviceUrl.setParameter('type', type)
   }
 
@@ -120,15 +85,15 @@ function getDateValue(pickerElem) {
     const year = instance[0].options.defaultDate.getFullYear()
     let day = instance[0].options.defaultDate.getDate()
     if (day < 10) {
-      day = "0"+day
+      day = '0' + day
     }
-    const month = (instance[0].options.defaultDate.getMonth()+1)
-    let monthString : string
+    const month = instance[0].options.defaultDate.getMonth() + 1
+    let monthString: string
     if (month < 10) {
-      monthString = "0"+month
+      monthString = '0' + month
     }
 
-    const date = year + "-" + monthString + "-" + day
+    const date = year + '-' + monthString + '-' + day
     return date || null
   }
   return null
@@ -153,18 +118,30 @@ onMounted(() => {
         <input type="text" class="datepicker-to border rounded p-1" />
       </label>
 
-  <div class="flex items-center gap-2">
-    TYPE
-    <div class="w-40"> <!-- control width -->
-              <select ref="selectEl"class="browser-default order-type">
-                <option value="">Empty</option>
-                <option value="Buy">Buy</option>
-                <option value="Sell">Sell</option>
-              </select>
-            </div>
-  </div>
+      <div class="flex items-center gap-2">
+        TYPE
+        <div class="w-40">
+          <select ref="selectEl" class="browser-default order-type">
+            <option value="">Empty</option>
+            <option value="Buy">Buy</option>
+            <option value="Sell">Sell</option>
+          </select>
+        </div>
+      </div>
 
       <a class="waves-effect waves-light btn" @click="requestOrders()">Go</a>
+
+      <a class="waves-effect waves-light btn modal-trigger" href="#modal1">Chart</a>
+
+      <div id="modal1" class="modal">
+        <div class="modal-content">
+          <h4>Modal Header</h4>
+          <p>A bunch of text</p>
+        </div>
+        <div class="modal-footer">
+          <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
+        </div>
+      </div>
 
       <div class="flex justify-left mt-4 space-x-2 content-between gap-4">
         <button class="px-3 py-1 rounded" :class="'bg-blue-500 text-white'" @click="nextOrders()">

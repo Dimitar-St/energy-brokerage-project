@@ -22,6 +22,7 @@
     </div>
   </nav>
   <router-view></router-view>
+  <notifications />
 </template>
 
 <style scoped></style>

@@ -9,6 +9,7 @@ import (
 
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -27,10 +28,20 @@ func generateSalt(size int) (string, error) {
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
 
+type loginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 func (h registerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	username := r.FormValue("username")
-	password := r.FormValue("password")
-	if username == "" || password == "" {
+	var req loginRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Invalid JSON: %v", err)
+		return
+	}
+	if req.Username == "" || req.Password == "" {
 		response.WriteJSON(w, http.StatusBadRequest, response.Response{
 			ClientResponse:   map[string]string{"error": "username and password are required"},
 			InternalResponse: "",
@@ -39,7 +50,7 @@ func (h registerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	salt, _ := generateSalt(16)
-	passToHash := password + salt
+	passToHash := req.Password + salt
 	hashed, err := bcrypt.GenerateFromPassword([]byte(passToHash), bcrypt.DefaultCost)
 	if err != nil {
 		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
@@ -51,7 +62,7 @@ func (h registerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	newUser := models.User{
 		ID:       uuid.New().String(),
-		Username: username,
+		Username: req.Username,
 		Password: string(hashed),
 		Salt:     salt,
 	}

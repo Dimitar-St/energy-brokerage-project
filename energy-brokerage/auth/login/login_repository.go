@@ -10,7 +10,7 @@ type Repository interface {
 }
 
 type loginRepository struct {
-	db gorm.DB
+	db *gorm.DB
 }
 
 func (r *loginRepository) GetUser(username string) (models.User, error) {
@@ -24,6 +24,6 @@ func (r *loginRepository) GetUser(username string) (models.User, error) {
 	return user, nil
 }
 
-func NewRepository(db gorm.DB) Repository {
+func NewRepository(db *gorm.DB) Repository {
 	return &loginRepository{db}
 }
