@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	server := server.Initialize()
+	server := server.Initialize(8080)
 
-	server.Start(8080)
+	server.Start()
 }
