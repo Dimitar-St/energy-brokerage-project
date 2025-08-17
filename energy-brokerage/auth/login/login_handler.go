@@ -143,7 +143,7 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		r.Header.Set("X-User", claims.Username)
+		w.Header().Set("X-User", claims.Username)
 
 		next.ServeHTTP(w, r)
 	})

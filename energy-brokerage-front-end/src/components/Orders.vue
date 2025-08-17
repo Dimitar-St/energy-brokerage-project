@@ -3,7 +3,9 @@ import { onMounted, ref } from 'vue'
 import { notify } from '@kyvg/vue3-notification'
 import axios from 'axios'
 import { UrlBuilder } from '../url/builder.ts'
+import  useUserStore  from '../store/store.ts'
 
+function initializeMaterialComponents() {
 document.addEventListener('DOMContentLoaded', function () {
   const to = document.querySelectorAll('.datepicker-to')
   const from = document.querySelectorAll('.datepicker-from')
@@ -16,6 +18,22 @@ document.addEventListener('DOMContentLoaded', function () {
   M.Dropdown.init(elems, {})
 })
 
+document.addEventListener('DOMContentLoaded', function () {
+  const elems = document.querySelectorAll('.modal-chart')
+  M.Modal.init(elems)
+})
+
+document.addEventListener('DOMContentLoaded', function () {
+  const elems = document.querySelectorAll('.modal-order')
+  M.Modal.init(elems)
+})
+
+document.addEventListener('DOMContentLoaded', function () {
+  const elems = document.querySelectorAll('.modal-row')
+  M.Modal.init(elems)
+})
+
+}
 type Order = {
   type: string
   amount: number
@@ -27,18 +45,23 @@ const currentPage = ref(0)
 const serviceUrl = new UrlBuilder('http://localhost:8080/orders')
 serviceUrl.setParameter('limit', '10')
 
+const currentAmount = ref('')
+const currentPrice = ref('')
+
 async function getOrders(url: string) {
   await axios
     .get(url, { withCredentials: true })
     .then((res) => {
       result.value = res.data
+      if (res.headers['x-user'] === undefined || res.headers['x-user'] === "") {
+        disableContent()
+      }
     })
     .catch((error) => {
       notify({
         title: 'error',
         text: error,
       })
-      console.log(error)
     })
 }
 
@@ -99,7 +122,53 @@ function getDateValue(pickerElem) {
   return null
 }
 
+function generateChart() {
+  requestOrders()
+  const xValues = []
+  const yValues = []
+
+  result.value.forEach((element) => {
+    let i = 0
+    console.log(element.price)
+    yValues.push(element.price)
+    xValues.push(i)
+    i++
+  })
+
+  new Chart('chart', {
+    type: 'line',
+    data: {
+      labels: xValues,
+      datasets: [
+        {
+          backgroundColor: 'rgba(0,0,255,1.0)',
+          borderColor: 'rgba(0,0,255,0.1)',
+          data: yValues,
+        },
+      ],
+    },
+  })
+}
+
+function clickRow(row) {
+  currentPrice.value = row.price
+  currentAmount.value = row.amount
+
+  const elems = document.querySelectorAll('.modal-row')
+  const modalRow = M.Modal.init(elems)[0]
+  modalRow.open()
+}
+
+function disableContent() {
+  const newOrderBtn = document.getElementById('modal-order-trigger');
+  const auth  = useUserStore()
+  if (newOrderBtn != null && !auth.isAuthenticated) {
+    newOrderBtn.classList.add('disabled');
+  }
+}
+
 onMounted(() => {
+  initializeMaterialComponents()
   getOrders(serviceUrl.toString())
 })
 </script>
@@ -131,15 +200,14 @@ onMounted(() => {
 
       <a class="waves-effect waves-light btn" @click="requestOrders()">Go</a>
 
-      <a class="waves-effect waves-light btn modal-trigger" href="#modal1">Chart</a>
-
-      <div id="modal1" class="modal">
+      <a class="waves-effect waves-light btn modal-trigger" href="#modal1" @click="generateChart()">Chart</a>
+      <div id="modal1" class="modal modal-chart">
         <div class="modal-content">
           <h4>Modal Header</h4>
-          <p>A bunch of text</p>
+          <canvas id="chart"></canvas>
         </div>
         <div class="modal-footer">
-          <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
+          <a href="#!" class="modal-close waves-effect waves-green btn-flat">Close</a>
         </div>
       </div>
 
@@ -154,7 +222,39 @@ onMounted(() => {
       </div>
     </div>
 
-    <table class="reposive-table w-full border-collapse border border-gray-300">
+    <a class="max-w-8xl mx-auto p-4 waves-effect waves-light btn modal-trigger" id="modal-order-trigger" href="#modal-order">New Order</a>
+    <div id="modal-order" class="modal modal-order">
+      <div class="modal-content">
+        <h4>Create Order</h4>
+        <div class="mb-3">
+          <label for="username" class="block text-sm font-medium mb-1">Price</label>
+          <input id="price" type="text" required class="w-full border rounded p-2" />
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-1">Amount</label>
+          <input id="amount" type="text" required class="w-full border rounded p-2" />
+        </div>
+
+        <div class="mb-5">
+          <label for="username" class="block text-sm font-medium mb-1">Type</label>
+          <div class="w-40">
+            <select ref="selectEl" class="browser-default order-type">
+              <option value="Buy">Buy</option>
+              <option value="Sell">Sell</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Close</a>
+        <button class="btn waves-effect waves-light" type="submit" name="action">Submit
+          <i class="material-icons right">send</i>
+        </button>
+      </div>
+    </div>
+
+    <table class="reposive-table w-full border-collapse border border-gray-300 highlight">
       <thead>
         <tr class="bg-gray-100">
           <th class="border border-gray-300 p-2 text-left">Type</th>
@@ -164,12 +264,44 @@ onMounted(() => {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(order, index) in result" :key="index">
+        <tr id="modal-row-trigger" href="#modal-row" v-for="(order, index) in result" :key="index" @click="clickRow(order)">
           <td class="border border-gray-300 p-2">{{ order.type }}</td>
           <td class="border border-gray-300 p-2 text-right">{{ order.amount }}</td>
           <td class="border border-gray-300 p-2 text-right">{{ order.price.toFixed(2) }}</td>
           <td class="border border-gray-300 p-2 text-right">{{ order.deliveryTime }}</td>
         </tr>
+    <div id="modal-row" class="modal modal-row">
+      <div class="modal-content">
+        <h4>Order</h4>
+        <div class="mb-3">
+          <label for="username" class="block text-sm font-medium mb-1">Price</label>
+          <input id="price" type="text" required class="w-full border rounded p-2"
+          :value="currentPrice" />
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-1">Amount</label>
+          <input id="amount" type="text" required class="w-full border rounded p-2"
+          :value="currentAmount"/>
+        </div>
+
+        <div class="mb-5">
+          <label for="username" class="block text-sm font-medium mb-1">Type</label>
+          <div class="w-40">
+            <select ref="selectEl" class="browser-default order-type">
+              <option value="Buy">Buy</option>
+              <option value="Sell">Sell</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Close</a>
+        <button class="btn waves-effect waves-light" type="submit" name="action">Submit
+          <i class="material-icons right">send</i>
+        </button>
+      </div>
+    </div>
       </tbody>
     </table>
   </div>

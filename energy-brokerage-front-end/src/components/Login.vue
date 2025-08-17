@@ -2,6 +2,13 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { UrlBuilder } from '../url/builder.ts'
+import { notify } from '@kyvg/vue3-notification'
+import { useRouter } from 'vue-router'
+import  useUserStore  from '../store/store.ts'
+
+const router = useRouter()
+
+const auth  = useUserStore()
 
 const username = ref('')
 const password = ref('')
@@ -21,8 +28,14 @@ async function handleLogin() {
       },
       withCredentials: true,
     })
-    .then((response) => {
-      console.log(response)
+    .then(() => {
+      notify({
+        title: 'Logged in successfully',
+      })
+      auth.$patch({
+        isAuthenticated: true
+      })
+      router.push('/orders')
     })
     .catch((error) => {
       if (error.response) {

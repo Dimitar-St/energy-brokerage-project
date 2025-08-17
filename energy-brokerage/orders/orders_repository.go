@@ -38,7 +38,9 @@ func (r *orderRepository) GetOrders(filters url.Values) ([]models.Order, error) 
 
 	query := r.db.Model(&models.Order{})
 	filter.Apply(query)
-	db.ApplyPagination(query, filters)
+	if filters["page"] != nil || filters["limit"] != nil {
+		db.ApplyPagination(query, filters)
+	}
 
 	tx := query.Find(&orders)
 	if tx.Error != nil {
