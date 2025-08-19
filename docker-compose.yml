@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: postres 
+      POSTGRES_PASSWORD: postres 
+      POSTGRES_DB: energy-brokerage
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./:/docker-entrypoint-initdb.d
+
+  app:
+    build: ./energy-brokerage 
+    container_name: go_server
+    restart: always
+    depends_on:
+      - db
+    environment:
+      POSTGRES_USER: postres 
+      POSTGRES_PASSWORD: postres 
+      POSTGRES_HOST: db  
+      POSTGRES_NAME: energy-brokerage 
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./energy-brokerage-front-end
+    container_name: frontend_app
+    restart: always
+    depends_on:
+      - app
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: "http://app:8080"
+
+volumes:
+  db_data:

@@ -1,29 +1,36 @@
 package db
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"time"
+
+	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/logger"
-	"os"
 )
 
 func Initialize() *gorm.DB {
 	log.Println("Initializing Database connection...")
 
-	dsn := "host=localhost user=postgres password=postgres dbname=energy-brokerage port=5432 sslmode=disable"
+	user := os.Getenv("POSTGRES_USER")
+	host := os.Getenv("POSTGRES_HOST")
+	dbName := os.Getenv("POSTGRES_NAME")
+	password := os.Getenv("POSTGRES_PASSWORD")
+
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=5432 sslmode=disable", host, user, password, dbName)
 	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
 		logger.Config{
-			SlowThreshold:             time.Second, // Slow SQL threshold
-			LogLevel:                  logger.Info, // Log level
-			IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
-			ParameterizedQueries:      false,       // Don't include params in the SQL log
-			Colorful:                  false,       // Disable color
+			SlowThreshold:             time.Second,
+			LogLevel:                  logger.Info,
+			IgnoreRecordNotFoundError: true,
+			ParameterizedQueries:      false,
+			Colorful:                  false,
 		},
 	)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
