@@ -284,6 +284,7 @@ async function updateRow() {
   const type = dropdown[0].el.value
 
   const order = {
+    ID: currentRowID.value,
     price: parseFloat(price),
     amount: parseFloat(amount),
     type: type,

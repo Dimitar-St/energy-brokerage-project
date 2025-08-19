@@ -6,24 +6,29 @@ services:
     container_name: postgres_db
     restart: always
     environment:
-      POSTGRES_USER: postres 
-      POSTGRES_PASSWORD: postres 
+      POSTGRES_USER: postgres 
+      POSTGRES_PASSWORD: postgres 
       POSTGRES_DB: energy-brokerage
     ports:
       - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./:/docker-entrypoint-initdb.d
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d energy-brokerage"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   app:
     build: ./energy-brokerage 
     container_name: go_server
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      POSTGRES_USER: postres 
-      POSTGRES_PASSWORD: postres 
+      POSTGRES_USER: postgres 
+      POSTGRES_PASSWORD: postgres 
       POSTGRES_HOST: db  
       POSTGRES_NAME: energy-brokerage 
     ports:
@@ -39,6 +44,3 @@ services:
       - "5173:5173"
     environment:
       VITE_API_URL: "http://app:8080"
-
-volumes:
-  db_data:

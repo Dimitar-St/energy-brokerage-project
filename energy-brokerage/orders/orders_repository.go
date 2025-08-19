@@ -5,9 +5,9 @@ import (
 	"energy-brokerage/filter"
 	"energy-brokerage/models"
 	"errors"
-	"net/url"
-
+	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"net/url"
 )
 
 type Repository interface {
@@ -23,6 +23,9 @@ type orderRepository struct {
 
 func (r *orderRepository) InsertOrder(order models.Order, username string) error {
 	order.UserID = username
+	order.ID = uuid.New().String()
+	order.Deleted = false
+
 	result := r.db.Create(&order)
 
 	if result.Error != nil {
@@ -34,7 +37,6 @@ func (r *orderRepository) InsertOrder(order models.Order, username string) error
 
 func (r *orderRepository) UpdateOrder(order models.Order, username string) error {
 	dbOrder := &models.Order{}
-
 	r.db.Model(models.Order{}).Where("user_id = ? AND id = ?", username, order.ID).First(dbOrder)
 
 	if dbOrder.ID == "" {

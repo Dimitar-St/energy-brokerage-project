@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"fmt"
-	"github.com/google/uuid"
 )
 
 type OrderStatus int
@@ -118,8 +117,5 @@ func (t LocalTime) String() string {
 }
 
 func NewOrder() Order {
-	return Order{
-		ID:      uuid.New().String(),
-		Deleted: false,
-	}
+	return Order{}
 }
