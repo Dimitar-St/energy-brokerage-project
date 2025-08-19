@@ -22,6 +22,7 @@
     "material-design-icons": "^3.0.1",
     "materialize-css": "1.0.0-rc.2",
     "pinia": "^3.0.3",
+    "pinia-plugin-persistedstate": "^4.5.0",
     "vue": "^3.5.18",
     "vue-router": "^4.5.1",
     "vuex": "^4.0.2"

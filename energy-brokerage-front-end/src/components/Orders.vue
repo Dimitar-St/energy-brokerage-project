@@ -63,14 +63,15 @@ function initializeMaterialComponents() {
 const currentUser = ref('')
 
 async function getOrders(url: string) {
+  if (!auth.isAuthenticated) {
+    return
+  }
   await axios
     .get(url, { withCredentials: true })
     .then((res) => {
       result.value = res.data
       currentUser.value = res.headers['x-user']
-      if (res.headers['x-user'] === undefined || res.headers['x-user'] === '') {
-        disableContent()
-      }
+      disableContent()
     })
     .catch((error) => {
       notify({
@@ -297,6 +298,8 @@ async function updateRow() {
           title: res.data.success,
         })
       }
+
+
       if (res.headers['x-user'] === undefined || res.headers['x-user'] === '') {
         disableContent()
       }

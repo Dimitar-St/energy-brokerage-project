@@ -6,6 +6,15 @@ const authStore = defineStore('user', {
       isAuthenticated: false,
     }
   },
+  persist: {
+    enabled: true,
+    strategies: [
+      {
+        storage: localStorage,
+        paths: ['isAuthenticated'],
+      }
+    ]
+  }
 })
 
 export default authStore
