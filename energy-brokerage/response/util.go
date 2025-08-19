@@ -15,7 +15,6 @@ func WriteJSON(w http.ResponseWriter, status int, v Response) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	log.Println(v.ClientResponse)
 	err := json.NewEncoder(w).Encode(&v.ClientResponse)
 	if err != nil {
 		log.Println(err.Error())

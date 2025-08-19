@@ -90,7 +90,7 @@ async function createOrder() {
   const price = document.getElementById('price').value
   const amount = document.getElementById('amount').value
   const deliveryTime = getDateValue(document.querySelectorAll('.datepicker-deliveryTime'))
-  const type = dropdown[0].el.value
+  const type = dropdown[0].el.value.toLowerCase()
 
   const order = {
     price: parseFloat(price),
@@ -399,7 +399,6 @@ async function downloadCSV() {
 }
 
 onMounted(() => {
-console.log("dfsdf")
  disableContent()
  initializeMaterialComponents()
  getOrders(serviceUrl.toString())
