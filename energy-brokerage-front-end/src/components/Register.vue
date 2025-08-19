@@ -2,11 +2,14 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { UrlBuilder } from '../url/builder.ts'
+import { useRouter } from 'vue-router'
 
 const username = ref('')
 const password = ref('')
 
 const serviceUrl = new UrlBuilder('http://localhost:8080/register')
+
+const router = useRouter()
 
 async function handleRegister() {
   const credentials = {
@@ -20,15 +23,16 @@ async function handleRegister() {
       },
       withCredentials: true,
     })
-    .then((response) => {
-      console.log(response)
+    .then(() => {
+      notify({
+        title: 'Registered successfully',
+      })
+      router.push('/login')
     })
     .catch((error) => {
-      if (error.response) {
-        console.log(error.response.data)
-        console.log(error.response.status)
-        console.log(error.response.headers)
-      }
+      notify({
+        title: error.response.data.error,
+      })
     })
 }
 </script>

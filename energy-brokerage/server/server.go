@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"energy-brokerage/auth/login"
+	"energy-brokerage/auth/logout"
 	"energy-brokerage/auth/register"
 	"energy-brokerage/db"
 	"energy-brokerage/models"
@@ -82,10 +83,13 @@ func Initialize(port int) HTTPHandler {
 
 	r.Handle("/register", register.NewHandler(registerReposotory)).Methods("POST")
 	r.Handle("/login", login.NewHandler(loginRepository)).Methods("POST")
+	r.Handle("/logout", logout.NewHander()).Methods("GET")
 
 	r.Handle("/orders", login.Middleware(orders.NewReadHandler(orderRepostory))).Methods("GET")
 	r.Handle("/orders", login.Middleware(orders.NewWriteHandler(orderRepostory))).Methods("POST")
-	r.Handle("/orders/{id}", login.Middleware(orders.NewWriteHandler(orderRepostory))).Methods("DELETE")
+	r.Handle("/orders", login.Middleware(orders.NewUpdateHandler(orderRepostory))).Methods("PUT")
+	r.Handle("/orders/{id}", login.Middleware(orders.NewDeleteHandler(orderRepostory))).Methods("DELETE")
+	r.Handle("/orders/export", login.Middleware(orders.NewExportHandler(orderRepostory))).Methods("GET")
 
 	stdServer := &http.Server{
 		Addr:         fmt.Sprintf(":%v", port),
@@ -108,7 +112,7 @@ func corsHandler(h http.Handler) http.HandlerFunc {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-User")
 		w.Header().Set("Access-Control-Expose-Headers", "X-User")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)

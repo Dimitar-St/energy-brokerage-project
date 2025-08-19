@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"gorm.io/gorm"
 )
 
 type ordersDeleteHandler struct {
@@ -14,7 +13,7 @@ type ordersDeleteHandler struct {
 
 func (l ordersDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-	err := l.repository.DeleteOrder(id)
+	err := l.repository.DeleteOrder(r.Context().Value("username").(string), id)
 	if err != nil {
 		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
 			ClientResponse:   map[string]string{"error": "failed to delete"},
@@ -25,12 +24,12 @@ func (l ordersDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	response.WriteJSON(w, http.StatusOK, response.Response{
 		ClientResponse:   map[string]string{"success": "order deleted"},
-		InternalResponse: err.Error(),
+		InternalResponse: "",
 	})
 }
 
-func NewDeleteHandler(db *gorm.DB) http.Handler {
+func NewDeleteHandler(repository Repository) http.Handler {
 	return ordersDeleteHandler{
-		repository: &orderRepository{db},
+		repository: repository,
 	}
 }

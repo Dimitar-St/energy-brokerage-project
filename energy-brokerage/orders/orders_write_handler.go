@@ -22,7 +22,7 @@ func (l ordersWriteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = l.repository.InsertOrder(order)
+	err = l.repository.InsertOrder(order, r.Context().Value("username").(string))
 	if err != nil {
 		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
 			ClientResponse:   map[string]string{"error": "failed save order"},

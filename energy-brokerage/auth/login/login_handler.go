@@ -1,6 +1,7 @@
 package login
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
@@ -145,7 +146,9 @@ func Middleware(next http.Handler) http.Handler {
 
 		w.Header().Set("X-User", claims.Username)
 
-		next.ServeHTTP(w, r)
+		ctx := context.WithValue(r.Context(), "username", claims.Username)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 

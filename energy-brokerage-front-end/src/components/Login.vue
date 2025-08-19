@@ -4,11 +4,11 @@ import axios from 'axios'
 import { UrlBuilder } from '../url/builder.ts'
 import { notify } from '@kyvg/vue3-notification'
 import { useRouter } from 'vue-router'
-import  useUserStore  from '../store/store.ts'
+import useUserStore from '../store/store.ts'
 
 const router = useRouter()
 
-const auth  = useUserStore()
+const auth = useUserStore()
 
 const username = ref('')
 const password = ref('')
@@ -20,7 +20,6 @@ async function handleLogin() {
     username: username.value,
     password: password.value,
   }
-  console.log('Logging in with', username.value, password.value)
   await axios
     .post(serviceUrl, credentials, {
       headers: {
@@ -33,16 +32,14 @@ async function handleLogin() {
         title: 'Logged in successfully',
       })
       auth.$patch({
-        isAuthenticated: true
+        isAuthenticated: true,
       })
       router.push('/orders')
     })
     .catch((error) => {
-      if (error.response) {
-        console.log(error.response.data)
-        console.log(error.response.status)
-        console.log(error.response.headers)
-      }
+      notify({
+        title: error.response.data.error,
+      })
     })
 }
 </script>
