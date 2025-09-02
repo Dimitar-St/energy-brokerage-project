@@ -6,10 +6,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"energy-brokerage/response"
-	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -20,7 +18,6 @@ type loginHandler struct {
 	repository Repository
 }
 
-// Something Simple will change that later
 type CustomClaims struct {
 	Username string `json:"username"`
 	jwt.RegisteredClaims
@@ -97,6 +94,8 @@ func generateJWT(username string) (string, error) {
 	claims := CustomClaims{
 		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "energy-brokerage",
+			Audience:  []string{"energy-brokerage-front-end"},
 			ExpiresAt: jwt.NewNumericDate(exp),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
@@ -129,7 +128,7 @@ func Middleware(next http.Handler) http.Handler {
 
 		token := cookie.Value
 		claims := &CustomClaims{}
-		_, err = jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
+		_, err = jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (any, error) {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 			}
@@ -138,7 +137,7 @@ func Middleware(next http.Handler) http.Handler {
 
 		if err != nil {
 			response.WriteJSON(w, http.StatusUnauthorized, response.Response{
-				ClientResponse:   map[string]string{"error": "invalid token: " + err.Error()},
+				ClientResponse:   map[string]string{"error": "invalid token"},
 				InternalResponse: err.Error(),
 			})
 			return
@@ -150,17 +149,6 @@ func Middleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
-}
-
-func extractBearerToken(authHeader string) (string, error) {
-	if authHeader == "" {
-		return "", errors.New("no auth header")
-	}
-	parts := strings.Fields(authHeader)
-	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-		return "", errors.New("invalid auth header format")
-	}
-	return parts[1], nil
 }
 
 func NewHandler(repository Repository) http.Handler {
