@@ -2,12 +2,13 @@ package orders
 
 import (
 	"energy-brokerage/db"
+	"energy-brokerage/models"
 	"energy-brokerage/response"
 	"net/http"
 )
 
 type ordersReadHandler struct {
-	repository db.Repository
+	repository db.Repository[models.Order]
 }
 
 func (l ordersReadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +29,7 @@ func (l ordersReadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func NewReadHandler(repository db.Repository) http.Handler {
+func NewReadHandler(repository db.Repository[models.Order]) http.Handler {
 	return ordersReadHandler{
 		repository: repository,
 	}

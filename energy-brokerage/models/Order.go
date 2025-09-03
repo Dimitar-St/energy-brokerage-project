@@ -48,7 +48,7 @@ type Order struct {
 	UserID       string      `gorm:"not null" json:"user"`
 }
 
-func (o *Order) String() string {
+func (o Order) String() string {
 	return fmt.Sprintf(`
 			ID: %v,\n
 			Type: %v,\n

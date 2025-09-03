@@ -11,7 +11,7 @@ import (
 )
 
 type ordersWriteHandler struct {
-	repository db.Repository
+	repository db.Repository[models.Order]
 }
 
 func (l ordersWriteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +29,7 @@ func (l ordersWriteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	order.ID = uuid.New().String()
 	order.Deleted = false
 
-	err = l.repository.Insert(&order)
+	err = l.repository.Insert(order)
 	if err != nil {
 		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
 			ClientResponse:   map[string]string{"error": "failed save order"},
@@ -44,7 +44,7 @@ func (l ordersWriteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func NewWriteHandler(repository db.Repository) http.Handler {
+func NewWriteHandler(repository db.Repository[models.Order]) http.Handler {
 	return ordersWriteHandler{
 		repository: repository,
 	}

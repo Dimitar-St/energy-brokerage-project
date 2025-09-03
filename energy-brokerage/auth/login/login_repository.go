@@ -11,28 +11,28 @@ type loginRepository struct {
 	db *gorm.DB
 }
 
-func (r *loginRepository) Get(data any) ([]models.Model, error) {
+func (r *loginRepository) Get(data any) ([]models.User, error) {
 	username := data.(*models.User).Username
 	user := &models.User{}
 	result := r.db.First(user, "Username = ?", username)
 
 	if result.Error != nil {
-		return []models.Model{}, result.Error
+		return []models.User{}, result.Error
 	}
 
-	return []models.Model{user}, nil
+	return []models.User{*user}, nil
 }
 
-func (r *loginRepository) Insert(data models.Model) error {
+func (r *loginRepository) Insert(data models.User) error {
 	return db.NotImplementedError
 }
-func (r *loginRepository) Delete(data models.Model) error {
+func (r *loginRepository) Delete(data models.User) error {
 	return db.NotImplementedError
 }
-func (r *loginRepository) Update(data models.Model) error {
+func (r *loginRepository) Update(data models.User) error {
 	return db.NotImplementedError
 }
 
-func NewRepository(db *gorm.DB) db.Repository {
+func NewRepository(db *gorm.DB) db.Repository[models.User] {
 	return &loginRepository{db}
 }

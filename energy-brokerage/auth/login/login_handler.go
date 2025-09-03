@@ -15,7 +15,7 @@ import (
 )
 
 type loginHandler struct {
-	repository db.Repository
+	repository db.Repository[models.User]
 }
 
 type loginRequest struct {
@@ -60,17 +60,10 @@ func (l loginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundUser, ok := users[0].(*models.User)
-	if !ok {
-		response.WriteJSON(w, http.StatusUnauthorized, response.Response{
-			ClientResponse:   map[string]string{"error": "invalid username or password"},
-			InternalResponse: "could not parse model to user",
-		})
-		return
-	}
+	user := users[0]
 
-	passToCompare := req.Password + foundUser.Salt
-	if err := bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(passToCompare)); err != nil {
+	passToCompare := req.Password + user.Salt
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(passToCompare)); err != nil {
 		response.WriteJSON(w, http.StatusUnauthorized, response.Response{
 			ClientResponse:   map[string]string{"error": "invalid username or password"},
 			InternalResponse: err.Error(),
@@ -138,7 +131,7 @@ func Middleware(next http.Handler) http.Handler {
 	})
 }
 
-func NewHandler(repository db.Repository) http.Handler {
+func NewHandler(repository db.Repository[models.User]) http.Handler {
 	return loginHandler{
 		repository: repository,
 	}

@@ -7,9 +7,9 @@ import (
 
 var NotImplementedError = errors.New("method not implemented")
 
-type Repository interface {
-	Insert(data models.Model) error
-	Get(filters any) ([]models.Model, error)
-	Delete(data models.Model) error
-	Update(data models.Model) error
+type Repository[T models.Model] interface {
+	Insert(data T) error
+	Get(filters any) ([]T, error)
+	Delete(data T) error
+	Update(data T) error
 }

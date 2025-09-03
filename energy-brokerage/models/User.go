@@ -9,7 +9,7 @@ type User struct {
 	Password string `gorm:"not null"`
 }
 
-func (u *User) String() string {
+func (u User) String() string {
 	return fmt.Sprintf(`
 		ID: %v,\n
 		Username: %v\n

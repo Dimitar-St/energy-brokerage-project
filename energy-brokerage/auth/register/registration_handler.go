@@ -17,7 +17,7 @@ import (
 )
 
 type registerHandler struct {
-	repository db.Repository
+	repository db.Repository[models.User]
 }
 
 func generateSalt(size int) (string, error) {
@@ -61,7 +61,7 @@ func (h registerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser := &models.User{
+	newUser := models.User{
 		ID:       uuid.New().String(),
 		Username: req.Username,
 		Password: string(hashed),
@@ -83,7 +83,7 @@ func (h registerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func NewHandler(repository db.Repository) http.Handler {
+func NewHandler(repository db.Repository[models.User]) http.Handler {
 	return registerHandler{
 		repository: repository,
 	}

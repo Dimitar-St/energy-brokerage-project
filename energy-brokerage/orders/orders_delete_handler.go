@@ -10,7 +10,7 @@ import (
 )
 
 type ordersDeleteHandler struct {
-	repository db.Repository
+	repository db.Repository[models.Order]
 }
 
 func (l ordersDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -19,7 +19,7 @@ func (l ordersDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	order.ID = id
 	order.UserID = r.Context().Value("username").(string)
 
-	err := l.repository.Delete(&order)
+	err := l.repository.Delete(order)
 	if err != nil {
 		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
 			ClientResponse:   map[string]string{"error": "failed to delete"},
@@ -34,7 +34,7 @@ func (l ordersDeleteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func NewDeleteHandler(repository db.Repository) http.Handler {
+func NewDeleteHandler(repository db.Repository[models.Order]) http.Handler {
 	return ordersDeleteHandler{
 		repository: repository,
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 type ordersExportHandler struct {
-	repository db.Repository
+	repository db.Repository[models.Order]
 }
 
 func (l ordersExportHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -31,8 +31,7 @@ func (l ordersExportHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	for _, order := range orders {
 		// !!!!!
-		orderToExport := order.(*models.Order)
-		row := []string{orderToExport.Type, orderToExport.DeliveryTime.String(), string(orderToExport.Amount), string(orderToExport.Price), orderToExport.Status.String()}
+		row := []string{order.Type, order.DeliveryTime.String(), string(order.Amount), string(order.Price), order.Status.String()}
 
 		data = append(data, row)
 	}
@@ -45,7 +44,7 @@ func (l ordersExportHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func NewExportHandler(repository db.Repository) http.Handler {
+func NewExportHandler(repository db.Repository[models.Order]) http.Handler {
 	return ordersExportHandler{
 		repository: repository,
 	}
