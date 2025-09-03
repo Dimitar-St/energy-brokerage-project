@@ -16,7 +16,14 @@ func (r *tokenRepository) Insert(data models.Token) error {
 }
 
 func (r *tokenRepository) Get(filters any) ([]models.Token, error) {
-	return []models.Token{}, db.NotImplementedError
+	token := &models.Token{}
+
+	tx := r.db.Model(&models.Token{}).Where("id = ?", filters).Find(token)
+	if tx.Error != nil {
+		return []models.Token{}, tx.Error
+	}
+
+	return []models.Token{*token}, nil
 }
 
 func (r *tokenRepository) Delete(data models.Token) error {

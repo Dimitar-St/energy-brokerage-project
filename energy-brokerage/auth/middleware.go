@@ -10,7 +10,11 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
-func Middleware(next http.Handler) http.Handler {
+type authMiddleware struct {
+	tokenProvider token.TokenProvider
+}
+
+func (a *authMiddleware) Handle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("auth_token")
 		if err != nil {
@@ -38,6 +42,14 @@ func Middleware(next http.Handler) http.Handler {
 			return
 		}
 
+		if a.tokenProvider.IsRevoked(claims.ID) {
+			response.WriteJSON(w, http.StatusUnauthorized, response.Response{
+				ClientResponse:   map[string]string{"error": "expired token"},
+				InternalResponse: "token was revoked",
+			})
+			return
+		}
+
 		w.Header().Set("X-User", claims.Username)
 
 		ctx := context.WithValue(r.Context(), "username", claims.Username)
@@ -45,4 +57,10 @@ func Middleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func NewMiddleware(tokenProvider token.TokenProvider) authMiddleware {
+	return authMiddleware{
+		tokenProvider: tokenProvider,
+	}
 }

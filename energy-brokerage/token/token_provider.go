@@ -3,6 +3,7 @@ package token
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"log"
 	"time"
 
 	"energy-brokerage/db"
@@ -74,6 +75,16 @@ func (t *TokenProvider) GenerateJWTAndSave(username string) (string, error) {
 
 func (t *TokenProvider) Revoke(id string) error {
 	return t.repository.Delete(models.Token{ID: id})
+}
+
+func (t *TokenProvider) IsRevoked(id string) bool {
+	token, err := t.repository.Get(id)
+	if err != nil {
+		log.Println(err)
+		return true
+	}
+
+	return token[0].Revoked
 }
 
 func NewProvider(repository db.Repository[models.Token]) TokenProvider {

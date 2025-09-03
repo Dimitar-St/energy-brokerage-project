@@ -81,6 +81,8 @@ func Initialize(port int) HTTPHandler {
 
 	tokenProvider := token.NewProvider(tokenRepository)
 
+	middleware := auth.NewMiddleware(tokenProvider)
+
 	r := mux.NewRouter()
 	httpLog := &httpLogger{}
 
@@ -88,10 +90,10 @@ func Initialize(port int) HTTPHandler {
 
 	r.Handle("/register", register.NewHandler(registerReposotory)).Methods("POST")
 	r.Handle("/login", login.NewHandler(loginRepository, tokenProvider)).Methods("POST")
-	r.Handle("/logout", auth.Middleware(logout.NewHander(tokenProvider))).Methods("GET")
+	r.Handle("/logout", middleware.Handle(logout.NewHander(tokenProvider))).Methods("GET")
 
 	ordersRouter := r.PathPrefix("/orders").Subrouter()
-	ordersRouter.Use(auth.Middleware)
+	ordersRouter.Use(middleware.Handle)
 
 	ordersRouter.Handle("", orders.NewReadHandler(orderRepostory)).Methods("GET")
 	ordersRouter.Handle("", orders.NewWriteHandler(orderRepostory)).Methods("POST")
