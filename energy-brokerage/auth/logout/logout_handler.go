@@ -2,15 +2,16 @@ package logout
 
 import (
 	"energy-brokerage/response"
+	"energy-brokerage/token"
 	"net/http"
 	"time"
 )
 
 type logoutHandler struct {
+	tokenProvider token.TokenProvider
 }
 
 func (h logoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Not the best way, via rotation will guaranty that the token is invalid
 	cookie := &http.Cookie{
 		Name:     "auth_token",
 		Value:    "",
@@ -21,12 +22,22 @@ func (h logoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, cookie)
 
+	jti := r.Context().Value("jti")
+
+	err := h.tokenProvider.Revoke(jti.(string))
+	message := ""
+	if err != nil {
+		message = err.Error()
+	}
+
 	response.WriteJSON(w, http.StatusOK, response.Response{
 		ClientResponse:   map[string]string{"success": "logged out"},
-		InternalResponse: "",
+		InternalResponse: message,
 	})
 }
 
-func NewHander() http.Handler {
-	return logoutHandler{}
+func NewHander(tokenProvider token.TokenProvider) http.Handler {
+	return logoutHandler{
+		tokenProvider: tokenProvider,
+	}
 }

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"energy-brokerage/auth"
 	"energy-brokerage/auth/login"
 	"energy-brokerage/auth/logout"
 	"energy-brokerage/auth/register"
@@ -87,16 +88,16 @@ func Initialize(port int) HTTPHandler {
 
 	r.Handle("/register", register.NewHandler(registerReposotory)).Methods("POST")
 	r.Handle("/login", login.NewHandler(loginRepository, tokenProvider)).Methods("POST")
-	r.Handle("/logout", logout.NewHander()).Methods("GET")
+	r.Handle("/logout", auth.Middleware(logout.NewHander(tokenProvider))).Methods("GET")
 
 	ordersRouter := r.PathPrefix("/orders").Subrouter()
-	ordersRouter.Use(login.Middleware)
+	ordersRouter.Use(auth.Middleware)
 
 	ordersRouter.Handle("", orders.NewReadHandler(orderRepostory)).Methods("GET")
 	ordersRouter.Handle("", orders.NewWriteHandler(orderRepostory)).Methods("POST")
 	ordersRouter.Handle("", orders.NewUpdateHandler(orderRepostory)).Methods("PUT")
-	ordersRouter.Handle("/{id}", login.Middleware(orders.NewDeleteHandler(orderRepostory))).Methods("DELETE")
-	ordersRouter.Handle("/export", login.Middleware(orders.NewExportHandler(orderRepostory))).Methods("GET")
+	ordersRouter.Handle("/{id}", orders.NewDeleteHandler(orderRepostory)).Methods("DELETE")
+	ordersRouter.Handle("/export", orders.NewExportHandler(orderRepostory)).Methods("GET")
 
 	stdServer := &http.Server{
 		Addr:         fmt.Sprintf(":%v", port),
