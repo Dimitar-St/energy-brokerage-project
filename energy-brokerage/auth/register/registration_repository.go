@@ -14,11 +14,7 @@ type registerRepository struct {
 func (r *registerRepository) Insert(user models.User) error {
 	result := r.db.Create(user)
 
-	if result.Error != nil {
-		return result.Error
-	}
-
-	return nil
+	return result.Error
 }
 
 func (r *registerRepository) Get(data any) ([]models.User, error) {

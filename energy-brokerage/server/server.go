@@ -15,6 +15,7 @@ import (
 	"os/signal"
 	"time"
 
+	"energy-brokerage/token"
 	"syscall"
 
 	"github.com/gorilla/mux"
@@ -75,6 +76,9 @@ func Initialize(port int) HTTPHandler {
 	orderRepostory := orders.NewRepository(db)
 	loginRepository := login.NewRepository(db)
 	registerReposotory := register.NewRepository(db)
+	tokenRepository := token.NewRepository(db)
+
+	tokenProvider := token.NewProvider(tokenRepository)
 
 	r := mux.NewRouter()
 	httpLog := &httpLogger{}
@@ -82,14 +86,17 @@ func Initialize(port int) HTTPHandler {
 	r.Use(httpLog.log)
 
 	r.Handle("/register", register.NewHandler(registerReposotory)).Methods("POST")
-	r.Handle("/login", login.NewHandler(loginRepository)).Methods("POST")
+	r.Handle("/login", login.NewHandler(loginRepository, tokenProvider)).Methods("POST")
 	r.Handle("/logout", logout.NewHander()).Methods("GET")
 
-	r.Handle("/orders", login.Middleware(orders.NewReadHandler(orderRepostory))).Methods("GET")
-	r.Handle("/orders", login.Middleware(orders.NewWriteHandler(orderRepostory))).Methods("POST")
-	r.Handle("/orders", login.Middleware(orders.NewUpdateHandler(orderRepostory))).Methods("PUT")
-	r.Handle("/orders/{id}", login.Middleware(orders.NewDeleteHandler(orderRepostory))).Methods("DELETE")
-	r.Handle("/orders/export", login.Middleware(orders.NewExportHandler(orderRepostory))).Methods("GET")
+	ordersRouter := r.PathPrefix("/orders").Subrouter()
+	ordersRouter.Use(login.Middleware)
+
+	ordersRouter.Handle("", orders.NewReadHandler(orderRepostory)).Methods("GET")
+	ordersRouter.Handle("", orders.NewWriteHandler(orderRepostory)).Methods("POST")
+	ordersRouter.Handle("", orders.NewUpdateHandler(orderRepostory)).Methods("PUT")
+	ordersRouter.Handle("/{id}", login.Middleware(orders.NewDeleteHandler(orderRepostory))).Methods("DELETE")
+	ordersRouter.Handle("/export", login.Middleware(orders.NewExportHandler(orderRepostory))).Methods("GET")
 
 	stdServer := &http.Server{
 		Addr:         fmt.Sprintf(":%v", port),

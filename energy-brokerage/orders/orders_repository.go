@@ -17,11 +17,7 @@ type orderRepository struct {
 func (r *orderRepository) Insert(order models.Order) error {
 	result := r.db.Create(&order)
 
-	if result.Error != nil {
-		return result.Error
-	}
-
-	return nil
+	return result.Error
 }
 
 func (r *orderRepository) Update(order models.Order) error {

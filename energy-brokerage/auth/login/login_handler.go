@@ -15,7 +15,8 @@ import (
 )
 
 type loginHandler struct {
-	repository db.Repository[models.User]
+	repository  db.Repository[models.User]
+	tokenProver token.TokenProvider
 }
 
 type loginRequest struct {
@@ -27,8 +28,10 @@ func (l loginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "Invalid JSON: %v", err)
+		response.WriteJSON(w, http.StatusBadRequest, response.Response{
+			ClientResponse:   map[string]string{"error": "username and password are required"},
+			InternalResponse: err.Error(),
+		})
 		return
 	}
 
@@ -71,7 +74,7 @@ func (l loginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenString, err := token.GenerateJWT(req.Username)
+	tokenString, err := l.tokenProver.GenerateJWTAndSave(req.Username)
 	if err != nil {
 		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
 			ClientResponse:   map[string]string{"error": "failed to create token"},
@@ -131,8 +134,9 @@ func Middleware(next http.Handler) http.Handler {
 	})
 }
 
-func NewHandler(repository db.Repository[models.User]) http.Handler {
+func NewHandler(repository db.Repository[models.User], tokenProver token.TokenProvider) http.Handler {
 	return loginHandler{
-		repository: repository,
+		repository:  repository,
+		tokenProver: tokenProver,
 	}
 }
