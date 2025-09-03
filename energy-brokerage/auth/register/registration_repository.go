@@ -1,19 +1,17 @@
 package register
 
 import (
+	"energy-brokerage/db"
 	"energy-brokerage/models"
+
 	"gorm.io/gorm"
 )
-
-type Repository interface {
-	InsertUser(user models.User) error
-}
 
 type registerRepository struct {
 	db *gorm.DB
 }
 
-func (r *registerRepository) InsertUser(user models.User) error {
+func (r *registerRepository) Insert(user models.Model) error {
 	result := r.db.Create(user)
 
 	if result.Error != nil {
@@ -23,6 +21,18 @@ func (r *registerRepository) InsertUser(user models.User) error {
 	return nil
 }
 
-func NewRepository(db *gorm.DB) Repository {
+func (r *registerRepository) Get(data any) ([]models.Model, error) {
+	return []models.Model{}, db.NotImplementedError
+}
+
+func (r *registerRepository) Delete(data models.Model) error {
+	return db.NotImplementedError
+}
+
+func (r *registerRepository) Update(data models.Model) error {
+	return db.NotImplementedError
+}
+
+func NewRepository(db *gorm.DB) db.Repository {
 	return &registerRepository{db}
 }

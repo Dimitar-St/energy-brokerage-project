@@ -2,13 +2,16 @@ package orders
 
 import (
 	"encoding/json"
+	"energy-brokerage/db"
 	"energy-brokerage/models"
 	"energy-brokerage/response"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 type ordersWriteHandler struct {
-	repository Repository
+	repository db.Repository
 }
 
 func (l ordersWriteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +25,11 @@ func (l ordersWriteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = l.repository.InsertOrder(order, r.Context().Value("username").(string))
+	order.UserID = r.Context().Value("username").(string)
+	order.ID = uuid.New().String()
+	order.Deleted = false
+
+	err = l.repository.Insert(&order)
 	if err != nil {
 		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
 			ClientResponse:   map[string]string{"error": "failed save order"},
@@ -37,7 +44,7 @@ func (l ordersWriteHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func NewWriteHandler(repository Repository) http.Handler {
+func NewWriteHandler(repository db.Repository) http.Handler {
 	return ordersWriteHandler{
 		repository: repository,
 	}

@@ -5,27 +5,16 @@ import (
 	"energy-brokerage/filter"
 	"energy-brokerage/models"
 	"errors"
-	"github.com/google/uuid"
-	"gorm.io/gorm"
 	"net/url"
-)
 
-type Repository interface {
-	InsertOrder(order models.Order, username string) error
-	GetOrders(filters url.Values) ([]models.Order, error)
-	DeleteOrder(username, id string) error
-	UpdateOrder(order models.Order, username string) error
-}
+	"gorm.io/gorm"
+)
 
 type orderRepository struct {
 	db *gorm.DB
 }
 
-func (r *orderRepository) InsertOrder(order models.Order, username string) error {
-	order.UserID = username
-	order.ID = uuid.New().String()
-	order.Deleted = false
-
+func (r *orderRepository) Insert(order models.Model) error {
 	result := r.db.Create(&order)
 
 	if result.Error != nil {
@@ -35,9 +24,11 @@ func (r *orderRepository) InsertOrder(order models.Order, username string) error
 	return nil
 }
 
-func (r *orderRepository) UpdateOrder(order models.Order, username string) error {
+func (r *orderRepository) Update(order models.Model) error {
+	//Not a good practice better the model itself to return it's properties without casting everytime
+	orderToUpdate := order.(*models.Order)
 	dbOrder := &models.Order{}
-	r.db.Model(models.Order{}).Where("user_id = ? AND id = ?", username, order.ID).First(dbOrder)
+	r.db.Model(models.Order{}).Where("user_id = ? AND id = ?", orderToUpdate.UserID, orderToUpdate.ID).First(dbOrder)
 
 	if dbOrder.ID == "" {
 		return errors.New("user does not own the order")
@@ -52,43 +43,45 @@ func (r *orderRepository) UpdateOrder(order models.Order, username string) error
 	return nil
 }
 
-func (r *orderRepository) GetOrders(filters url.Values) ([]models.Order, error) {
-	orders := []models.Order{}
-	filter, err := filter.NewFilter(filters)
+func (r *orderRepository) Get(filters any) ([]models.Model, error) {
+	filterToApply := filters.(url.Values)
+	orders := []models.Model{}
+	filter, err := filter.NewFilter(filterToApply)
 	if err != nil {
 		return orders, err
 	}
 
 	query := r.db.Model(&models.Order{})
 	filter.Apply(query)
-	db.ApplyPagination(query, filters)
+	db.ApplyPagination(query, filterToApply)
 
 	query.Where("deleted = ?", false)
 
 	tx := query.Find(&orders)
 	if tx.Error != nil {
-		return []models.Order{}, tx.Error
+		return []models.Model{}, tx.Error
 	}
 
 	return orders, nil
 }
 
-func (r *orderRepository) DeleteOrder(username, id string) error {
+func (r *orderRepository) Delete(order models.Model) error {
 	dbOrder := &models.Order{}
+	orderToDelete := order.(*models.Order)
 
-	r.db.Model(models.Order{}).Where("user_id = ? AND id = ?", username, id).First(dbOrder)
+	r.db.Model(models.Order{}).Where("user_id = ? AND id = ?", orderToDelete.UserID, orderToDelete.ID).First(dbOrder)
 
 	if dbOrder.ID == "" {
 		return errors.New("user does not own the order")
 	}
-	tx := r.db.Model(&models.Order{}).Where("deleted = ?", false).Where("ID = ?", id).Update("deleted", true)
+	tx := r.db.Model(&models.Order{}).Where("deleted = ?", false).Where("ID = ?", dbOrder.ID).Update("deleted", true)
 	if tx.Error != nil {
 		return tx.Error
 	}
 	return nil
 }
 
-func NewRepository(db *gorm.DB) Repository {
+func NewRepository(db *gorm.DB) db.Repository {
 	return &orderRepository{db}
 
 }

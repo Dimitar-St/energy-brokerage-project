@@ -1,6 +1,8 @@
 package orders
 
 import (
+	"energy-brokerage/db"
+	"energy-brokerage/models"
 	"energy-brokerage/response"
 	"net/http"
 
@@ -8,11 +10,11 @@ import (
 )
 
 type ordersExportHandler struct {
-	repository Repository
+	repository db.Repository
 }
 
 func (l ordersExportHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	orders, err := l.repository.GetOrders(r.URL.Query())
+	orders, err := l.repository.Get(r.URL.Query())
 	if err != nil {
 		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
 			ClientResponse:   map[string]string{"error": "fail to export orders"},
@@ -28,7 +30,9 @@ func (l ordersExportHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	data = append(data, columns)
 
 	for _, order := range orders {
-		row := []string{order.Type, order.DeliveryTime.String(), string(order.Amount), string(order.Price), order.Status.String()}
+		// !!!!!
+		orderToExport := order.(*models.Order)
+		row := []string{orderToExport.Type, orderToExport.DeliveryTime.String(), string(orderToExport.Amount), string(orderToExport.Price), orderToExport.Status.String()}
 
 		data = append(data, row)
 	}
@@ -41,7 +45,7 @@ func (l ordersExportHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func NewExportHandler(repository Repository) http.Handler {
+func NewExportHandler(repository db.Repository) http.Handler {
 	return ordersExportHandler{
 		repository: repository,
 	}

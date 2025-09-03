@@ -63,23 +63,6 @@ func validateDate(layout string) func([]string) ([]any, error) {
 	}
 }
 
-func parseDateRange(layout string) func([]string) ([]any, error) {
-	return func(values []string) ([]any, error) {
-		if len(values) < 2 || values[0] == "" || values[1] == "" {
-			return nil, nil
-		}
-		start, err := time.Parse(layout, values[0])
-		if err != nil {
-			return nil, err
-		}
-		end, err := time.Parse(layout, values[1])
-		if err != nil {
-			return nil, err
-		}
-		return []any{start, end}, nil
-	}
-}
-
 func NewFilter(values url.Values) (*Filter, error) {
 	layout := "2006-01-02"
 

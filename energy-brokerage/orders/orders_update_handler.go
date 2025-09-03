@@ -2,13 +2,14 @@ package orders
 
 import (
 	"encoding/json"
+	"energy-brokerage/db"
 	"energy-brokerage/models"
 	"energy-brokerage/response"
 	"net/http"
 )
 
 type ordersUpdateHandler struct {
-	repository Repository
+	repository db.Repository
 }
 
 func (l ordersUpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +23,9 @@ func (l ordersUpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = l.repository.UpdateOrder(order, r.Context().Value("username").(string))
+	order.UserID = r.Context().Value("username").(string)
+
+	err = l.repository.Update(&order)
 	if err != nil {
 		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
 			ClientResponse:   map[string]string{"error": "failed update order"},
@@ -37,7 +40,7 @@ func (l ordersUpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func NewUpdateHandler(repository Repository) http.Handler {
+func NewUpdateHandler(repository db.Repository) http.Handler {
 	return ordersUpdateHandler{
 		repository: repository,
 	}

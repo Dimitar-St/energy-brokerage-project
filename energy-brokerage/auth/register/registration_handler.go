@@ -1,6 +1,7 @@
 package register
 
 import (
+	"energy-brokerage/db"
 	"energy-brokerage/models"
 	"energy-brokerage/response"
 	"net/http"
@@ -16,7 +17,7 @@ import (
 )
 
 type registerHandler struct {
-	repository Repository
+	repository db.Repository
 }
 
 func generateSalt(size int) (string, error) {
@@ -60,14 +61,14 @@ func (h registerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser := models.User{
+	newUser := &models.User{
 		ID:       uuid.New().String(),
 		Username: req.Username,
 		Password: string(hashed),
 		Salt:     salt,
 	}
 
-	err = h.repository.InsertUser(newUser)
+	err = h.repository.Insert(newUser)
 	if err != nil {
 		response.WriteJSON(w, http.StatusInternalServerError, response.Response{
 			ClientResponse:   map[string]string{"error": "could not create user"},
@@ -82,7 +83,7 @@ func (h registerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func NewHandler(repository Repository) http.Handler {
+func NewHandler(repository db.Repository) http.Handler {
 	return registerHandler{
 		repository: repository,
 	}

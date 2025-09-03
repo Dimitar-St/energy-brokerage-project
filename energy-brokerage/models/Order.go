@@ -48,6 +48,17 @@ type Order struct {
 	UserID       string      `gorm:"not null" json:"user"`
 }
 
+func (o *Order) String() string {
+	return fmt.Sprintf(`
+			ID: %v,\n
+			Type: %v,\n
+			DeliveryTime: %v,\n
+			Amount: %v,\n
+			Price: %v,\n
+			Status: %v\n
+		`, o.ID, o.Type, o.DeliveryTime, o.Amount, o.Price, o.Status)
+}
+
 const TimeFormat = "2006-01-02 15:04:05.000 -0700"
 
 type LocalTime time.Time
@@ -85,7 +96,7 @@ func (t LocalTime) Value() (driver.Value, error) {
 	return []byte(time.Time(t).Format(TimeFormat)), nil
 }
 
-func (t *LocalTime) Scan(value interface{}) error {
+func (t *LocalTime) Scan(value any) error {
 	if value == nil {
 		*t = LocalTime(time.Time{})
 		return nil

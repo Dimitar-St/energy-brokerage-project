@@ -1,3 +1,7 @@
 package models
 
-var ActiveModels []any = []any{&User{}, &Order{}}
+type Model interface {
+	String() string
+}
+
+var ActiveModels []any = []any{&User{}, &Order{}, &Token{}}
